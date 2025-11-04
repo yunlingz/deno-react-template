@@ -1,7 +1,7 @@
 {
   "tasks": {
-    "dev": "deno run vite:dev & deno run server:watch",
-    "prod": "deno run vite:build && deno run server:start",
+    "dev": "deno run vite:dev & deno run --env-file=.env.dev server:watch",
+    "prod": "deno run vite:build && deno run --env-file=.env.prod server:start",
     "vite:dev": "deno run --unstable-no-legacy-abort -A npm:vite dev",
     "vite:build": "deno run -A npm:vite build",
     "server:watch": "deno run -A --watch ./api/main.ts",
@@ -21,6 +21,8 @@
     "hono": "npm:hono@^4.10.4",
     "react": "npm:react@^19.2.0",
     "react-dom": "npm:react-dom@^19.2.0",
-    "vite": "npm:vite@^7.1.12"
+    "remeda": "npm:remeda@^2.32.0",
+    "vite": "npm:vite@^7.1.12",
+    "zod": "npm:zod@^4.1.12"
   }
 }

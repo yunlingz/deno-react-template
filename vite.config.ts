@@ -4,10 +4,10 @@ import deno from "@deno/vite-plugin";
 
 export default defineConfig({
   server: {
-    port: 3000,
+    port: 13000,
     proxy: {
       "/api": {
-        target: "http://localhost:5000",
+        target: "http://localhost:15000",
         changeOrigin: true,
       },
     },
