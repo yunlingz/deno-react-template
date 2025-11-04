@@ -1,21 +1,19 @@
-import express from "express";
-import cors from "cors";
+import { Hono } from "hono";
+import { serveStatic } from "hono/deno";
+import { cors } from "hono/cors";
 
+const app = new Hono();
 const PORT = 5000;
 
-const app = express();
+app.use("*", cors());
 
-app.use(cors());
-
-app.get("/api/welcome", (_req, res) => {
-  res.send("Welcome to Deno + Express!");
+app.get("/api/welcome", (c) => {
+  return c.text("Welcome to Deno + Hono!");
 });
 
-app.use(express.static("public"));
-app.use(express.static("dist"));
+app.use("/*", serveStatic({ root: "./public" }));
+app.use("/*", serveStatic({ root: "./dist" }));
 
 if (import.meta.main) {
-  app.listen(PORT, () => {
-    console.log(`Server listening on http://localhost:${PORT}`);
-  });
+  Deno.serve({ hostname: "127.0.0.1", port: PORT }, app.fetch);
 }

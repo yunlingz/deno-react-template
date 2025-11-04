@@ -15,13 +15,10 @@
   },
   "imports": {
     "@deno/vite-plugin": "npm:@deno/vite-plugin@^1.0.5",
-    "@types/cors": "npm:@types/cors@^2.8.19",
-    "@types/express": "npm:@types/express@^5.0.5",
     "@types/react": "npm:@types/react@^19.2.2",
     "@types/react-dom": "npm:@types/react-dom@^19.2.2",
     "@vitejs/plugin-react-swc": "npm:@vitejs/plugin-react-swc@^4.2.0",
-    "cors": "npm:cors@^2.8.5",
-    "express": "npm:express@^5.1.0",
+    "hono": "npm:hono@^4.10.4",
     "react": "npm:react@^19.2.0",
     "react-dom": "npm:react-dom@^19.2.0",
     "vite": "npm:vite@^7.1.12"
