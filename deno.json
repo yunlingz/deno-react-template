@@ -1,14 +1,4 @@
 {
-  "imports": {
-    "@deno/vite-plugin": "npm:@deno/vite-plugin@^1.0.5",
-    "@oak/oak": "jsr:@oak/oak@^17.1.6",
-    "@tajpouria/cors": "jsr:@tajpouria/cors@^1.2.1",
-    "@types/react": "npm:@types/react@^19.2.2",
-    "@vitejs/plugin-react": "npm:@vitejs/plugin-react@^5.1.0",
-    "react": "npm:react@^19.2.0",
-    "react-dom": "npm:react-dom@^19.2.0",
-    "vite": "npm:vite@^7.1.12"
-  },
   "tasks": {
     "dev": "deno run -A npm:vite & deno run server:start",
     "build": "deno run -A npm:vite build",
@@ -17,17 +7,18 @@
   },
   "nodeModulesDir": "auto",
   "compilerOptions": {
-    "types": [
-      "react",
-      "react-dom",
-      "@types/react"
-    ],
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "deno.ns"
-    ],
-    "jsx": "react-jsx",
-    "jsxImportSource": "react"
+    "types": ["vite/client"],
+    "lib": ["dom", "dom.iterable", "deno.ns"],
+    "jsx": "react-jsx"
+  },
+  "imports": {
+    "@oak/oak": "jsr:@oak/oak@^17.1.6",
+    "@tajpouria/cors": "jsr:@tajpouria/cors@^1.2.1",
+    "@types/react": "npm:@types/react@^19.2.2",
+    "@types/react-dom": "npm:@types/react-dom@^19.2.2",
+    "@vitejs/plugin-react-swc": "npm:@vitejs/plugin-react-swc@^4.2.0",
+    "react": "npm:react@^19.2.0",
+    "react-dom": "npm:react-dom@^19.2.0",
+    "vite": "npm:vite@^7.1.12"
   }
 }
