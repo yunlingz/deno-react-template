@@ -1,13 +1,14 @@
 import { defineConfig } from "vite";
 import reactSwc from "@vitejs/plugin-react-swc";
 import deno from "@deno/vite-plugin";
+import { env } from "./parse-env.ts";
 
 export default defineConfig({
   server: {
-    port: 13000,
+    port: env().PORT,
     proxy: {
       "/api": {
-        target: "http://localhost:15000",
+        target: `http://127.0.0.1:${env().API_PORT}`,
         changeOrigin: true,
       },
     },

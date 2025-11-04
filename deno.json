@@ -1,11 +1,11 @@
 {
   "tasks": {
-    "dev": "deno run vite:dev & deno run --env-file=.env.dev server:watch",
-    "prod": "deno run vite:build && deno run --env-file=.env.prod server:start",
-    "vite:dev": "deno run --unstable-no-legacy-abort -A npm:vite dev",
-    "vite:build": "deno run -A npm:vite build",
-    "server:watch": "deno run -A --watch ./api/main.ts",
-    "server:start": "deno run -A ./api/main.ts"
+    "dev": "deno run vite:dev & deno run server:watch",
+    "prod": "deno run vite:build && deno run server:start",
+    "vite:dev": "deno run --env-file=.env.base --env-file=.env.dev --unstable-no-legacy-abort -A npm:vite dev",
+    "vite:build": "deno run --env-file=.env.base --env-file=.env.prod -A npm:vite build",
+    "server:watch": "deno run --env-file=.env.base --env-file=.env.dev -A --watch ./api/main.ts",
+    "server:start": "deno run --env-file=.env.base --env-file=.env.prod -A ./api/main.ts"
   },
   "nodeModulesDir": "auto",
   "compilerOptions": {
