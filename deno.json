@@ -1,9 +1,11 @@
 {
   "tasks": {
-    "dev": "deno run -A npm:vite & deno run server:start",
-    "build": "deno run -A npm:vite build",
-    "server:start": "deno run -A --watch ./api/main.ts",
-    "serve": "deno run build && deno run server:start"
+    "dev": "deno run vite:dev & deno run server:watch",
+    "prod": "deno run vite:build && deno run server:start",
+    "vite:dev": "deno run --unstable-no-legacy-abort -A npm:vite dev",
+    "vite:build": "deno run -A npm:vite build",
+    "server:watch": "deno run -A --watch ./api/main.ts",
+    "server:start": "deno run -A ./api/main.ts"
   },
   "nodeModulesDir": "auto",
   "compilerOptions": {
@@ -12,11 +14,14 @@
     "jsx": "react-jsx"
   },
   "imports": {
-    "@oak/oak": "jsr:@oak/oak@^17.1.6",
-    "@tajpouria/cors": "jsr:@tajpouria/cors@^1.2.1",
+    "@deno/vite-plugin": "npm:@deno/vite-plugin@^1.0.5",
+    "@types/cors": "npm:@types/cors@^2.8.19",
+    "@types/express": "npm:@types/express@^5.0.5",
     "@types/react": "npm:@types/react@^19.2.2",
     "@types/react-dom": "npm:@types/react-dom@^19.2.2",
     "@vitejs/plugin-react-swc": "npm:@vitejs/plugin-react-swc@^4.2.0",
+    "cors": "npm:cors@^2.8.5",
+    "express": "npm:express@^5.1.0",
     "react": "npm:react@^19.2.0",
     "react-dom": "npm:react-dom@^19.2.0",
     "vite": "npm:vite@^7.1.12"

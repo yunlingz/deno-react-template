@@ -1,10 +1,22 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useEffect, useState } from "react";
+import reactLogo from "./assets/react.svg";
+import viteLogo from "/vite.svg";
+import "./App.css";
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [count, setCount] = useState(0);
+
+  const [welcomeMessage, setWelcomeMessage] = useState<string | undefined>(
+    undefined,
+  );
+  useEffect(() => {
+    fetch("/api/welcome")
+      .then((response) => response.text())
+      .then((message) => setWelcomeMessage(message))
+      .catch((error) =>
+        console.error("Error fetching welcome message:", error)
+      );
+  }, []);
 
   return (
     <>
@@ -16,9 +28,9 @@ function App() {
           <img src={reactLogo} className="logo react" alt="React logo" />
         </a>
       </div>
-      <h1>Vite + React</h1>
+      <h1>Vite + React: {welcomeMessage}</h1>
       <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
+        <button onClick={() => setCount((count) => count + 1)} type="button">
           count is {count}
         </button>
         <p>
@@ -29,7 +41,7 @@ function App() {
         Click on the Vite and React logos to learn more
       </p>
     </>
-  )
+  );
 }
 
-export default App
+export default App;
