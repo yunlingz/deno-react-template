@@ -19,6 +19,7 @@
     "@types/react-dom": "npm:@types/react-dom@^19.2.2",
     "@vitejs/plugin-react-swc": "npm:@vitejs/plugin-react-swc@^4.2.0",
     "hono": "npm:hono@^4.10.4",
+    "jose": "npm:jose@^6.1.0",
     "react": "npm:react@^19.2.0",
     "react-dom": "npm:react-dom@^19.2.0",
     "remeda": "npm:remeda@^2.32.0",

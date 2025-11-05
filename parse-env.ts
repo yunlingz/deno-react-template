@@ -43,7 +43,7 @@ export const env = R.once((): Env => {
 
     console.log("Loaded environment variables:", env);
     return env;
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error parsing environment variables:", error);
     throw error;
   }
