@@ -1,42 +1,21 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { exportJWK, generateKeyPair, SignJWT } from "jose";
-import { parseArgs } from "@std/cli/parse-args";
-import * as z from "zod";
 import * as R from "remeda";
+import { env } from "../parse-env.ts";
 
-const flagsSchema = z.object({
-  "client-id": z.string(),
-  "client-secret": z.string(),
-  "redirect-uri": z.url(),
-  "stored-username": z.string(),
-  "stored-password": z.string(),
-  "base-uri": z.url(),
-});
-type Flags = z.infer<typeof flagsSchema>;
-
-let flags: Flags;
-try {
-  flags = flagsSchema.parse(parseArgs(Deno.args, {
-    string: [
-      "client-id",
-      "client-secret",
-      "redirect-uri",
-      "stored-username",
-      "stored-password",
-      "base-uri",
-    ],
-    default: {
-      "client-id": "client-id-0000",
-      "client-secret": "client-secret-0000",
-      "stored-username": "username-0000",
-      "stored-password": "password-0000",
-    },
-  }));
-} catch (error) {
-  console.error("Error parsing command line arguments:", error);
-  Deno.exit(1);
-}
+type Flags = {
+  "client-id": string;
+  "client-secret": string;
+  "redirect-uri": string;
+  "base-uri": string;
+};
+const flags: Flags = {
+  "client-id": env().OAUTH2_CLIENT_ID,
+  "client-secret": env().OAUTH2_CLIENT_SECRET,
+  "redirect-uri": `${env().OAUTH2_CLIENT_BASE_URL}/api/callback`,
+  "base-uri": env().OAUTH2_SERVER_BASE_URL,
+};
 
 console.log("Using flags:", flags);
 
@@ -47,19 +26,12 @@ const users = new Map<
   string,
   { username: string; password: string; avatar: string }
 >([
-  [crypto.randomUUID(), {
-    username: flags["stored-username"],
-    password: flags["stored-password"],
+  ["d0ad45b7-864b-424a-a94e-74bba169891d", {
+    username: "username-0000",
+    password: "password-0000",
     avatar: "\u{1F97A}",
   }],
 ]);
-// make sure userID <-> username in bijection
-if (
-  new Set(Array.from(users.values()).map((u) => u.username)).size !== users.size
-) {
-  console.error("Usernames must be unique");
-  Deno.exit(1);
-}
 
 const clients = new Map<
   string,
