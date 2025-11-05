@@ -8,6 +8,6 @@ Run steps:
 5. Visit the devtunnel proxy to oauth2 client URL to expreience the flow of oauth2. The oauth2 server side has a built-in account (username: `username-0000`, password: `password-0000`).
 
 Quick link:
-* oauth2 server impl: [/api/oauth2-server.t](https://github.com/yunlingz/deno-react-template/blob/oauth-example/api/oauth2-server.ts)
+* oauth2 server impl: [/api/oauth2-server.ts](https://github.com/yunlingz/deno-react-template/blob/oauth-example/api/oauth2-server.ts)
 * oauth2 client impl: [/api/main.ts](https://github.com/yunlingz/deno-react-template/blob/oauth-example/api/main.ts)
 * oauth2 client UI impl: [/src/App.tsx](https://github.com/yunlingz/deno-react-template/blob/oauth-example/src/App.tsx)
