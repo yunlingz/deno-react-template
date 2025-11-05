@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-import { exportJWK, generateKeyPair, SignJWT } from "jose";
+import { exportJWK, generateKeyPair, jwtVerify, SignJWT } from "jose";
 import { parseArgs } from "@std/cli/parse-args";
 import * as z from "zod";
 import * as R from "remeda";
@@ -327,7 +327,17 @@ app.post("/oauth/token", async (c) => {
   }
 
   const now = Math.floor(Date.now() / 1000);
-  const access_token = crypto.randomUUID();
+
+  const access_token = await new SignJWT({
+    sub: userId,
+    iss: flags["base-uri"],
+    aud: flags["base-uri"],
+    iat: now,
+    exp: now + 3600,
+  })
+    .setProtectedHeader({ alg: "ES256", kid })
+    .sign(privateKey);
+
   const id_token = await new SignJWT({
     sub: userId,
     iss: flags["base-uri"],
@@ -348,6 +358,37 @@ app.post("/oauth/token", async (c) => {
 
 app.get("/.well-known/jwks.json", (c) => {
   return c.json({ keys: [publicJwk] });
+});
+
+app.get("/api/profile", async (c) => {
+  const auth = c.req.header("authorization");
+  if (!auth || !auth.startsWith("Bearer ")) {
+    return c.json({ error: "missing_token" }, 401);
+  }
+  const token = auth.slice("Bearer ".length);
+
+  try {
+    const { payload } = await jwtVerify(token, publicKey, {
+      algorithms: ["ES256"],
+      issuer: flags["base-uri"],
+      audience: flags["base-uri"],
+    });
+
+    if (!payload.sub) {
+      return c.json({ error: "invalid_token" }, 401);
+    }
+
+    const user = users.get(payload.sub);
+    if (!user) {
+      return c.json({ error: "user_not_found" }, 401);
+    }
+    return c.json({
+      username: user.username,
+      favoriteEmoji: user.favoriteEmoji,
+    });
+  } catch {
+    return c.json({ error: "invalid_token" }, 401);
+  }
 });
 
 if (import.meta.main) {
