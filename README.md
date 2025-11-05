@@ -11,3 +11,5 @@ Quick link:
 * oauth2 server impl: [/api/oauth2-server.ts](https://github.com/yunlingz/deno-react-template/blob/oauth-example/api/oauth2-server.ts)
 * oauth2 client impl: [/api/main.ts](https://github.com/yunlingz/deno-react-template/blob/oauth-example/api/main.ts)
 * oauth2 client UI impl: [/src/App.tsx](https://github.com/yunlingz/deno-react-template/blob/oauth-example/src/App.tsx)
+
+![OAuth2 Flow](docs/flow.svg)

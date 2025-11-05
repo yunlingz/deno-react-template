@@ -1,4 +1,3 @@
-```
 @startuml
 title OAuth2 Server/Client Flow
 
@@ -6,6 +5,7 @@ actor User
 participant "Web UI (App.tsx)" as UI
 participant "OAuth2 Client (main.ts)" as Client
 participant "OAuth2 Server (oauth2-server.ts)" as Server
+participant "OAuth2 Server Key Vault" as KeyVault
 
 User -> UI: Visit Web UI
 UI -> Client: GET /api/id-profile & /api/extended-profile
@@ -18,15 +18,25 @@ alt Not signed in
     User -> Server: Submit username/password
     Server -> Server: Validate against users Map
     Server -> Server: Generate authorization code (code=abc123)
-    Server -> Server: Store code in codes Map
+    Server -> Server: Store code and state in codes Map
     Server -> Client: Redirect to /api/callback?code=abc123&state=...
+    Client -> Client: Validate state matches original
     Client -> Server: POST /oauth/token
     note right of Client: Body:\n grant_type=authorization_code\n code=abc123\n client_id=...\n client_secret=...\n redirect_uri=...
     Server -> Server: Validate code from codes Map
     Server -> Server: Validate client_id and client_secret against clients Map
+    Server -> KeyVault: Sign id_token (JWT) with private key
+    note right of KeyVault
+      id_token payload fields:
+      - sub: Subject (user ID)
+      - iss: Issuer (OAuth2 server URL)
+      - aud: Audience (client ID)
+      - iat: Issued at (timestamp)
+      - exp: Expiry (timestamp)
+    end note
+    KeyVault -> Server: Return signed id_token
     Server -> Server: Generate access_token (UUID, e.g. acc_456)
     Server -> Server: Store in accessTokenStore (acc_456 -> userId)
-    Server -> Server: Generate id_token (JWT)
     Server -> Client: Return JSON { access_token: acc_456, id_token: ..., token_type: "Bearer", expires_in: 3600 }
     Client -> Client: Store tokens in sessionStore (session_id -> tokens)
     note right of Client: Only session_id is sent to UI as cookie
@@ -35,13 +45,24 @@ end
 
 UI -> Client: GET /api/id-profile (with session_id cookie)
 Client -> Client: Get id_token from sessionStore using session_id
-Client -> Server: Validate id_token with JWKS (using jose)
-Server -> Server: Fetch JWKS from /.well-known/jwks.json
-Server -> Client: Return decoded claims (e.g. sub, iss, aud)
+Client -> Server: GET /.well-known/jwks.json
+Server -> KeyVault: Serve public key (JWKS)
+KeyVault -> Server: JWKS response
+Server -> Client: JWKS response
+Client -> Client: Validate id_token signature using JWKS public key
+Client -> Client: Decode claims (e.g. sub, iss, aud, iat, exp)
+note right of Client
+  id_token claims meaning:
+  - sub: User's unique identifier
+  - iss: OAuth2 server URL
+  - aud: Intended audience (client ID)
+  - iat: Token issued at (Unix timestamp)
+  - exp: Token expiry (Unix timestamp)
+end note
 
 UI -> Client: GET /api/extended-profile (with session_id cookie)
 Client -> Client: Get access_token from sessionStore using session_id
-Client -> Server: GET /api/profile with Authorization: Bearer acc_456
+Client -> Server: GET /protected-api/profile with Authorization: Bearer acc_456
 Server -> Server: Lookup acc_456 in accessTokenStore
 Server -> Server: Get userId, fetch user info from users Map
 Server -> Client: Return user profile (username, avatar, emoji)
@@ -54,4 +75,3 @@ Client -> Client: Remove session from sessionStore
 UI -> User: Show sign-in screen
 
 @enduml
-```
