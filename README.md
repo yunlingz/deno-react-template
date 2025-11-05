@@ -1,4 +1,4 @@
-# Oauth2 Server & Client Implmentation
+# OAuth2 Server & Client implementation
 
 Run steps:
 1. install [devtunnel](https://learn.microsoft.com/en-us/azure/developer/dev-tunnels/overview) and [deno](https://docs.deno.com/runtime/getting_started/installation/), then clone the branch: `git clone --branch oauth-example https://github.com/yunlingz/deno-react-template.git`
