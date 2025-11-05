@@ -73,7 +73,13 @@ const clients = new Map<
 
 const codes = new Map<
   string,
-  { clientId: string; userId: string; state: string; expiresAt: number }
+  {
+    clientId: string;
+    userId: string;
+    redirectUri: string;
+    state: string;
+    expiresAt: number;
+  }
 >();
 
 const { publicKey, privateKey } = await generateKeyPair("ES256");
@@ -292,6 +298,7 @@ app.post("/oauth/authorize", async (c) => {
   codes.set(code, {
     clientId: client_id,
     userId: userEntry[0],
+    redirectUri: redirect_uri,
     state,
     expiresAt: Date.now() + 5 * 60 * 1000,
   });
@@ -312,8 +319,8 @@ app.post("/oauth/token", async (c) => {
     grant_type !== "authorization_code" ||
     !client ||
     client_secret !== client.clientSecret ||
-    redirect_uri !== client.redirectUri ||
     !codeEntry ||
+    redirect_uri !== codeEntry.redirectUri ||
     codeEntry.expiresAt < Date.now()
   ) {
     return c.json({ error: "invalid_grant: parameters are invalid" }, 400);
