@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-import { exportJWK, generateKeyPair, jwtVerify, SignJWT } from "jose";
+import { exportJWK, generateKeyPair, SignJWT } from "jose";
 import { parseArgs } from "@std/cli/parse-args";
 import * as z from "zod";
 import * as R from "remeda";
@@ -45,12 +45,12 @@ app.use(cors());
 
 const users = new Map<
   string,
-  { username: string; password: string; favoriteEmoji: string }
+  { username: string; password: string; avatar: string }
 >([
   [crypto.randomUUID(), {
     username: flags["stored-username"],
     password: flags["stored-password"],
-    favoriteEmoji: "\u{1F97A}",
+    avatar: "\u{1F97A}",
   }],
 ]);
 // make sure userID <-> username in bijection
@@ -407,7 +407,7 @@ app.get("/protected-api/profile", (c) => {
   }
   return c.json({
     username: user.username,
-    favoriteEmoji: user.favoriteEmoji,
+    avatar: user.avatar,
   });
 });
 

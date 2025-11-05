@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import "./App.css";
 
 type IdProfile = {
   claims: {
@@ -9,7 +10,7 @@ type IdProfile = {
 
 type ExtendedProfile = {
   username: string;
-  favoriteEmoji: string;
+  avatar: string;
 };
 
 function App() {
@@ -56,37 +57,63 @@ function App() {
     setLoading(false);
   };
 
-  if (loading) return <div>Loading...</div>;
+  if (loading) {
+    return (
+      <div className="container">
+        <div className="card">
+          <h2 className="loading-title">Loading...</h2>
+        </div>
+      </div>
+    );
+  }
 
   if (!signedIn) {
     return (
-      <div style={{ padding: "2rem", fontFamily: "sans-serif" }}>
-        <h2>Please sign in with OAuth2</h2>
-        <button onClick={handleSignIn} type="submit">Sign in</button>
+      <div className="container">
+        <div className="card">
+          <h2 className="signin-title">Sign in to see your profile</h2>
+          <button
+            onClick={handleSignIn}
+            type="submit"
+            className="main-btn"
+          >
+            Sign in with OAuth2
+          </button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div style={{ padding: "2rem", fontFamily: "sans-serif" }}>
-      <h2>Welcome!</h2>
-      <p>
-        <b>User ID:</b> {idProfile?.claims.sub}
-        <br />
-        <b>User Name:</b> {extendedProfile?.username}
-        <br />
-        <b>Favorite Emoji:</b>{" "}
-        <span style={{ fontSize: "2rem" }}>
-          {extendedProfile?.favoriteEmoji}
-        </span>
-      </p>
-      <button
-        onClick={handleLogout}
-        type="button"
-        style={{ marginTop: "1rem" }}
-      >
-        Logout
-      </button>
+    <div className="container">
+      <div className="card">
+        <div className="avatar-circle">
+          <span className="avatar-emoji">
+            {extendedProfile?.avatar}
+          </span>
+        </div>
+        <h2 className="welcome-title">
+          Welcome, {extendedProfile?.username}!
+        </h2>
+        <div className="info-box">
+          <div>
+            <b className="info-label">User ID:</b>{" "}
+            <span className="info-value">
+              {idProfile?.claims.sub}
+            </span>
+          </div>
+          <div>
+            <b className="info-label">User Name:</b> {extendedProfile?.username}
+          </div>
+        </div>
+        <button
+          onClick={handleLogout}
+          type="button"
+          className="main-btn"
+        >
+          Logout
+        </button>
+      </div>
     </div>
   );
 }
