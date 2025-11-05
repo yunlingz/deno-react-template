@@ -1,46 +1,76 @@
 import { useEffect, useState } from "react";
-import reactLogo from "./assets/react.svg";
-import viteLogo from "/vite.svg";
-import "./App.css";
+
+type IdProfile = {
+  claims: {
+    sub: string; // userID
+    [key: string]: unknown;
+  };
+};
+
+type ExtendedProfile = {
+  username: string;
+  favoriteEmoji: string;
+};
 
 function App() {
-  const [count, setCount] = useState(0);
+  const [signedIn, setSignedIn] = useState(false);
+  const [idProfile, setIdProfile] = useState<IdProfile | null>(null);
+  const [extendedProfile, setExtendedProfile] = useState<
+    ExtendedProfile | null
+  >(null);
+  const [loading, setLoading] = useState(true);
 
-  const [welcomeMessage, setWelcomeMessage] = useState<string | undefined>(
-    undefined,
-  );
   useEffect(() => {
-    fetch("/api/welcome")
-      .then((response) => response.text())
-      .then((message) => setWelcomeMessage(message))
-      .catch((error) =>
-        console.error("Error fetching welcome message:", error)
-      );
+    Promise.all([
+      fetch("/api/id-profile").then((res) => {
+        if (!res.ok) throw new Error("Not signed in");
+        return res.json();
+      }),
+      fetch("/api/extended-profile").then((res) => {
+        if (!res.ok) throw new Error("Not signed in");
+        return res.json();
+      }),
+    ])
+      .then(([idProf, extProf]) => {
+        setIdProfile(idProf);
+        setExtendedProfile(extProf);
+        setSignedIn(true);
+      })
+      .catch(() => {
+        setSignedIn(false);
+      })
+      .finally(() => setLoading(false));
   }, []);
 
+  const handleSignIn = () => {
+    globalThis.location.href = "/api/login";
+  };
+
+  if (loading) return <div>Loading...</div>;
+
+  if (!signedIn) {
+    return (
+      <div style={{ padding: "2rem", fontFamily: "sans-serif" }}>
+        <h2>Please sign in with OAuth2</h2>
+        <button onClick={handleSignIn} type="submit">Sign in</button>
+      </div>
+    );
+  }
+
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React: {welcomeMessage}</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)} type="button">
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
+    <div style={{ padding: "2rem", fontFamily: "sans-serif" }}>
+      <h2>Welcome!</h2>
+      <p>
+        <b>User ID:</b> {idProfile?.claims.sub}
+        <br />
+        <b>User Name:</b> {extendedProfile?.username}
+        <br />
+        <b>Favorite Emoji:</b>{" "}
+        <span style={{ fontSize: "2rem" }}>
+          {extendedProfile?.favoriteEmoji}
+        </span>
       </p>
-    </>
+    </div>
   );
 }
 
