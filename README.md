@@ -1,7 +1,7 @@
 # Oauth2 Server & Client Implmentation
 
 Run steps:
-1. install [devtunnel](https://learn.microsoft.com/en-us/azure/developer/dev-tunnels/overview) and [deno](https://docs.deno.com/runtime/getting_started/installation/).
+1. install [devtunnel](https://learn.microsoft.com/en-us/azure/developer/dev-tunnels/overview) and [deno](https://docs.deno.com/runtime/getting_started/installation/), then clone the branch: `git clone --branch oauth-example https://github.com/yunlingz/deno-react-template.git`
 2. start devtunnel proxy to oauth2 server: `devtunnel host -p 21000 --allow-anonymous`, update the URL to `.env.base` > `OAUTH2_SERVER_BASE_URL`.
 3. start devtunnel proxy to oauth2 client + Web UI: `devtunnel host -p 14000 --allow-anonymous`, update the URL to `.env.base` > `OAUTH2_CLIENT_BASE_URL`.
 4. start both oauth2 server and oauth2 client: `deno run dev` (watch mode) or `deno run prod`.
@@ -12,4 +12,5 @@ Quick link:
 * oauth2 client impl: [/api/main.ts](https://github.com/yunlingz/deno-react-template/blob/oauth-example/api/main.ts)
 * oauth2 client UI impl: [/src/App.tsx](https://github.com/yunlingz/deno-react-template/blob/oauth-example/src/App.tsx)
 
+OAuth2 & OpenID protocol explained:
 ![OAuth2 Flow](docs/flow.svg)
