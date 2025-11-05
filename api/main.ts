@@ -182,6 +182,22 @@ app.get("/api/id-profile", async (c) => {
   }
 });
 
+app.get("/api/logout", (c) => {
+  const sessionId = getCookie(c, "session_id");
+  if (sessionId) {
+    sessionStore.delete(sessionId);
+  }
+
+  setCookie(c, "session_id", "", {
+    httpOnly: true,
+    secure: true,
+    sameSite: "Lax",
+    maxAge: 0,
+  });
+
+  return c.text("Logged out");
+});
+
 if (import.meta.main) {
   switch (env().BUILD_MODE) {
     case "dev": {

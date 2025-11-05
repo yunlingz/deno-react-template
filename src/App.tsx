@@ -21,29 +21,39 @@ function App() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([
-      fetch("/api/id-profile").then((res) => {
-        if (!res.ok) throw new Error("Not signed in");
-        return res.json();
-      }),
-      fetch("/api/extended-profile").then((res) => {
-        if (!res.ok) throw new Error("Not signed in");
-        return res.json();
-      }),
-    ])
-      .then(([idProf, extProf]) => {
+    const fetchProfiles = async () => {
+      try {
+        const [idRes, extRes] = await Promise.all([
+          fetch("/api/id-profile"),
+          fetch("/api/extended-profile"),
+        ]);
+        if (!idRes.ok || !extRes.ok) {
+          throw new Error("Not signed in");
+        }
+        const idProf = await idRes.json();
+        const extProf = await extRes.json();
         setIdProfile(idProf);
         setExtendedProfile(extProf);
         setSignedIn(true);
-      })
-      .catch(() => {
+      } catch {
         setSignedIn(false);
-      })
-      .finally(() => setLoading(false));
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProfiles();
   }, []);
 
   const handleSignIn = () => {
     globalThis.location.href = "/api/login";
+  };
+
+  const handleLogout = async () => {
+    await fetch("/api/logout", { method: "GET" });
+    setSignedIn(false);
+    setIdProfile(null);
+    setExtendedProfile(null);
+    setLoading(false);
   };
 
   if (loading) return <div>Loading...</div>;
@@ -70,6 +80,13 @@ function App() {
           {extendedProfile?.favoriteEmoji}
         </span>
       </p>
+      <button
+        onClick={handleLogout}
+        type="button"
+        style={{ marginTop: "1rem" }}
+      >
+        Logout
+      </button>
     </div>
   );
 }
