@@ -367,6 +367,23 @@ app.get("/.well-known/jwks.json", (c) => {
   return c.json({ keys: [publicJwk] });
 });
 
+app.get("/.well-known/openid-configuration", (c) => {
+  const base = flags["base-uri"].replace(/\/$/, "");
+  return c.json({
+    issuer: base,
+    authorization_endpoint: `${base}/oauth/authorize`,
+    token_endpoint: `${base}/oauth/token`,
+    jwks_uri: `${base}/.well-known/jwks.json`,
+    response_types_supported: ["code"],
+    subject_types_supported: ["public"],
+    id_token_signing_alg_values_supported: ["ES256"],
+    scopes_supported: ["openid", "profile"],
+    token_endpoint_auth_methods_supported: ["client_secret_post"],
+    claims_supported: ["sub", "iss", "aud", "exp", "iat"],
+    grant_types_supported: ["authorization_code"],
+  });
+});
+
 app.get("/api/profile", async (c) => {
   const auth = c.req.header("authorization");
   if (!auth || !auth.startsWith("Bearer ")) {
