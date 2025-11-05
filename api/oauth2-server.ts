@@ -3,6 +3,7 @@ import { cors } from "hono/cors";
 import { exportJWK, generateKeyPair, SignJWT } from "jose";
 import { parseArgs } from "@std/cli/parse-args";
 import * as z from "zod";
+import * as R from "remeda";
 
 const flagsSchema = z.object({
   "client-id": z.string(),
@@ -42,19 +43,37 @@ console.log("Using flags:", flags);
 const app = new Hono();
 app.use(cors());
 
+const users = new Map<
+  string,
+  { username: string; password: string; favoriteEmoji: string }
+>([
+  [crypto.randomUUID(), {
+    username: flags["stored-username"],
+    password: flags["stored-password"],
+    favoriteEmoji: "\u{1F97A}",
+  }],
+]);
+// make sure userID <-> username in bijection
+if (
+  new Set(Array.from(users.values()).map((u) => u.username)).size !== users.size
+) {
+  console.error("Usernames must be unique");
+  Deno.exit(1);
+}
+
 const clients = new Map<
   string,
-  { client_secret: string; redirect_uri: string }
+  { clientSecret: string; redirectUri: string }
 >([
   [flags["client-id"], {
-    client_secret: flags["client-secret"],
-    redirect_uri: flags["redirect-uri"],
+    clientSecret: flags["client-secret"],
+    redirectUri: flags["redirect-uri"],
   }],
 ]);
 
 const codes = new Map<
   string,
-  { client_id: string; username: string; state: string }
+  { clientId: string; userId: string; state: string; expiresAt: number }
 >();
 
 const { publicKey, privateKey } = await generateKeyPair("ES256");
@@ -68,7 +87,7 @@ app.get("/oauth/authorize", (c) => {
   if (
     response_type !== "code" ||
     !client ||
-    redirect_uri !== client.redirect_uri
+    redirect_uri !== client.redirectUri
   ) {
     return c.text("Invalid client or params", 400);
   }
@@ -187,11 +206,15 @@ app.post("/oauth/authorize", async (c) => {
   const body = filterStrings(await c.req.parseBody());
   const { client_id, redirect_uri, state, username, password } = body;
   const client = clients.get(client_id);
+  const userEntry = R.pipe(
+    Array.from(users.entries()),
+    (entries) => entries.find(([_id, u]) => u.username === username),
+  ); // userID <-> username already bijection
   if (
     !client ||
-    redirect_uri !== client.redirect_uri ||
-    username !== flags["stored-username"] ||
-    password !== flags["stored-password"]
+    redirect_uri !== client.redirectUri ||
+    !userEntry ||
+    password !== userEntry[1].password
   ) {
     return c.html(
       `
@@ -266,7 +289,12 @@ app.post("/oauth/authorize", async (c) => {
   }
 
   const code = crypto.randomUUID();
-  codes.set(code, { client_id, username, state });
+  codes.set(code, {
+    clientId: client_id,
+    userId: userEntry[0],
+    state,
+    expiresAt: Date.now() + 5 * 60 * 1000,
+  });
 
   const url = new URL(redirect_uri);
   url.searchParams.set("code", code);
@@ -278,23 +306,31 @@ app.post("/oauth/token", async (c) => {
   const body = filterStrings(await c.req.parseBody());
   const { grant_type, code, client_id, client_secret, redirect_uri } = body;
   const client = clients.get(client_id);
+  const codeEntry = codes.get(code);
+
   if (
     grant_type !== "authorization_code" ||
     !client ||
-    client_secret !== client.client_secret ||
-    redirect_uri !== client.redirect_uri ||
-    !codes.has(code)
+    client_secret !== client.clientSecret ||
+    redirect_uri !== client.redirectUri ||
+    !codeEntry ||
+    codeEntry.expiresAt < Date.now()
   ) {
-    return c.json({ error: "invalid_grant" }, 400);
+    return c.json({ error: "invalid_grant: parameters are invalid" }, 400);
   }
-  const { username } = codes.get(code)!;
+
+  const { userId } = codeEntry;
   codes.delete(code);
+  const user = users.get(userId);
+  if (!user) {
+    return c.json({ error: "invalid_grant: user not found" }, 400);
+  }
 
   const now = Math.floor(Date.now() / 1000);
   const access_token = crypto.randomUUID();
   const id_token = await new SignJWT({
-    sub: username,
-    iss: "http://localhost:8000",
+    sub: userId,
+    iss: flags["base-uri"],
     aud: client_id,
     iat: now,
     exp: now + 3600,
