@@ -1,20 +1,54 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { exportJWK, generateKeyPair, SignJWT } from "jose";
+import { parseArgs } from "@std/cli/parse-args";
+import * as z from "zod";
+
+const flagsSchema = z.object({
+  "client-id": z.string(),
+  "client-secret": z.string(),
+  "redirect-uri": z.url(),
+  "stored-username": z.string(),
+  "stored-password": z.string(),
+  "base-uri": z.url(),
+});
+type Flags = z.infer<typeof flagsSchema>;
+
+let flags: Flags;
+try {
+  flags = flagsSchema.parse(parseArgs(Deno.args, {
+    string: [
+      "client-id",
+      "client-secret",
+      "redirect-uri",
+      "stored-username",
+      "stored-password",
+      "base-uri",
+    ],
+    default: {
+      "client-id": "client-id-0000",
+      "client-secret": "client-secret-0000",
+      "stored-username": "username-0000",
+      "stored-password": "password-0000",
+    },
+  }));
+} catch (error) {
+  console.error("Error parsing command line arguments:", error);
+  Deno.exit(1);
+}
+
+console.log("Using flags:", flags);
 
 const app = new Hono();
 app.use(cors());
-
-const USERNAME = "user";
-const PASSWORD = "pass";
 
 const clients = new Map<
   string,
   { client_secret: string; redirect_uri: string }
 >([
-  ["client123", {
-    client_secret: "secret123",
-    redirect_uri: "http://localhost:5173/callback",
+  [flags["client-id"], {
+    client_secret: flags["client-secret"],
+    redirect_uri: flags["redirect-uri"],
   }],
 ]);
 
@@ -156,8 +190,8 @@ app.post("/oauth/authorize", async (c) => {
   if (
     !client ||
     redirect_uri !== client.redirect_uri ||
-    username !== USERNAME ||
-    password !== PASSWORD
+    username !== flags["stored-username"] ||
+    password !== flags["stored-password"]
   ) {
     return c.text("Invalid credentials or client", 400);
   }
