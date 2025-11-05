@@ -4,10 +4,12 @@ import { getCookie, setCookie } from "hono/cookie";
 import { cors } from "hono/cors";
 import { env } from "../parse-env.ts";
 import * as z from "zod";
+import { createRemoteJWKSet, jwtVerify } from "jose";
 
 const app = new Hono();
 
 const OPENID_CONFIG_SCHEMA = z.object({
+  issuer: z.url(),
   authorization_endpoint: z.url(),
   token_endpoint: z.url(),
   jwks_uri: z.url(),
@@ -25,16 +27,15 @@ const OPENID_CONFIG = await fetch(
   return OPENID_CONFIG_SCHEMA.parse(parsed);
 });
 
+const JWKS = createRemoteJWKSet(new URL(OPENID_CONFIG.jwks_uri));
+
 const getRandomState = (): string => {
   const bytes = crypto.getRandomValues(new Uint8Array(8));
   return btoa(String.fromCharCode(...bytes))
     .replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 };
 
-const api = new Hono();
-app.route("/api", api);
-
-api.get("/login", (c) => {
+app.get("/api/login", (c) => {
   const state = getRandomState();
   setCookie(c, "oauth_state", state, {
     httpOnly: true,
@@ -42,7 +43,7 @@ api.get("/login", (c) => {
     sameSite: "Lax",
   });
 
-  const redirectUri = `${new URL(c.req.url).origin}/api/callback`;
+  const redirectUri = `${env().OAUTH2_CLIENT_BASE_URL}/api/callback`;
   const authorizationUrl = new URL(
     OPENID_CONFIG.authorization_endpoint,
   );
@@ -60,10 +61,12 @@ const TOKEN_RESPONSE_SCHEMA = z.object({
   token_type: z.string(),
   expires_in: z.number(),
 });
-type TokenResponse = z.infer<typeof TOKEN_RESPONSE_SCHEMA>;
+type TokenResponse = z.infer<typeof TOKEN_RESPONSE_SCHEMA> & {
+  expires_at: number;
+};
 const sessionStore = new Map<string, TokenResponse>();
 
-api.get("/callback", async (c) => {
+app.get("/api/callback", async (c) => {
   const code = c.req.query("code");
   const state = c.req.query("state");
   const storedState = getCookie(c, "oauth_state");
@@ -72,7 +75,7 @@ api.get("/callback", async (c) => {
     return c.text("Invalid state or missing code", 400);
   }
 
-  const redirectUri = c.req.url;
+  const redirectUri = `${env().OAUTH2_CLIENT_BASE_URL}/api/callback`;
   const tokenResponse = await fetch(OPENID_CONFIG.token_endpoint, {
     method: "POST",
     headers: {
@@ -98,7 +101,10 @@ api.get("/callback", async (c) => {
   );
 
   const sessionId = crypto.randomUUID();
-  sessionStore.set(sessionId, tokenData);
+  sessionStore.set(sessionId, {
+    ...tokenData,
+    expires_at: Date.now() + tokenData.expires_in * 1000,
+  });
 
   setCookie(c, "session_id", sessionId, {
     httpOnly: true,
@@ -107,6 +113,73 @@ api.get("/callback", async (c) => {
   });
 
   return c.redirect("/");
+});
+
+app.get("/api/extended-profile", async (c) => {
+  const sessionId = getCookie(c, "session_id");
+  if (!sessionId) {
+    return c.text("Not authenticated", 401);
+  }
+
+  const session = sessionStore.get(sessionId);
+  if (!session) {
+    return c.text("Session not found", 401);
+  }
+  if (session.expires_at < Date.now()) {
+    sessionStore.delete(sessionId);
+    return c.text("Session expired", 401);
+  }
+
+  const profileResponse = await fetch(
+    `${env().OAUTH2_SERVER_BASE_URL}/protected-api/profile`,
+    {
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+      },
+    },
+  );
+  if (!profileResponse.ok) {
+    return c.text(
+      `Failed to fetch profile: ${profileResponse.status} ${profileResponse.statusText}`,
+      500,
+    );
+  }
+
+  const profileData = await profileResponse.json();
+  return c.json(profileData);
+});
+
+app.get("/api/id-profile", async (c) => {
+  const sessionId = getCookie(c, "session_id");
+  if (!sessionId) {
+    return c.text("Not authenticated", 401);
+  }
+
+  const session = sessionStore.get(sessionId);
+  if (!session) {
+    return c.text("Session not found", 401);
+  }
+  if (session.expires_at < Date.now()) {
+    sessionStore.delete(sessionId);
+    return c.text("Session expired", 401);
+  }
+
+  try {
+    const { payload, protectedHeader } = await jwtVerify(
+      session.id_token,
+      JWKS,
+      {
+        issuer: OPENID_CONFIG.issuer,
+        audience: env().OAUTH2_CLIENT_ID,
+      },
+    );
+    return c.json({
+      header: protectedHeader,
+      claims: payload,
+    });
+  } catch (error) {
+    return c.text(`Failed to verify ID token: ${error}`, 500);
+  }
 });
 
 if (import.meta.main) {

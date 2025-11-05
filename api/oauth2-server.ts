@@ -309,6 +309,11 @@ app.post("/oauth/authorize", async (c) => {
   return c.redirect(url.toString());
 });
 
+const accessTokenStore = new Map<
+  string,
+  { userId: string; expiresAt: number }
+>();
+
 app.post("/oauth/token", async (c) => {
   const body = filterStrings(await c.req.parseBody());
   const { grant_type, code, client_id, client_secret, redirect_uri } = body;
@@ -335,15 +340,11 @@ app.post("/oauth/token", async (c) => {
 
   const now = Math.floor(Date.now() / 1000);
 
-  const access_token = await new SignJWT({
-    sub: userId,
-    iss: flags["base-uri"],
-    aud: flags["base-uri"],
-    iat: now,
-    exp: now + 3600,
-  })
-    .setProtectedHeader({ alg: "ES256", kid })
-    .sign(privateKey);
+  const access_token = crypto.randomUUID();
+  accessTokenStore.set(access_token, {
+    userId,
+    expiresAt: Date.now() + 3600 * 1000, // 1h
+  });
 
   const id_token = await new SignJWT({
     sub: userId,
@@ -384,35 +385,30 @@ app.get("/.well-known/openid-configuration", (c) => {
   });
 });
 
-app.get("/api/profile", async (c) => {
+app.get("/protected-api/profile", (c) => {
   const auth = c.req.header("authorization");
   if (!auth || !auth.startsWith("Bearer ")) {
     return c.json({ error: "missing_token" }, 401);
   }
   const token = auth.slice("Bearer ".length);
 
-  try {
-    const { payload } = await jwtVerify(token, publicKey, {
-      algorithms: ["ES256"],
-      issuer: flags["base-uri"],
-      audience: flags["base-uri"],
-    });
-
-    if (!payload.sub) {
-      return c.json({ error: "invalid_token" }, 401);
-    }
-
-    const user = users.get(payload.sub);
-    if (!user) {
-      return c.json({ error: "user_not_found" }, 401);
-    }
-    return c.json({
-      username: user.username,
-      favoriteEmoji: user.favoriteEmoji,
-    });
-  } catch {
+  const tokenInfo = accessTokenStore.get(token);
+  if (!tokenInfo) {
     return c.json({ error: "invalid_token" }, 401);
   }
+  if (tokenInfo.expiresAt < Date.now()) {
+    accessTokenStore.delete(token);
+    return c.json({ error: "expired_token" }, 401);
+  }
+
+  const user = users.get(tokenInfo.userId);
+  if (!user) {
+    return c.json({ error: "user_not_found" }, 401);
+  }
+  return c.json({
+    username: user.username,
+    favoriteEmoji: user.favoriteEmoji,
+  });
 });
 
 if (import.meta.main) {

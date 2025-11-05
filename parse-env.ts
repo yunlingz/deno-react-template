@@ -6,6 +6,7 @@ const envSchema = z.object({
   OAUTH2_SERVER_BASE_URL: z.url(),
   OAUTH2_CLIENT_ID: z.string().min(1),
   OAUTH2_CLIENT_SECRET: z.string().min(1),
+  OAUTH2_CLIENT_BASE_URL: z.url(),
   PORT: z.string()
     .transform((val) => Number(val))
     .refine((val) => Number.isInteger(val) && val > 0 && val < 65536, {
