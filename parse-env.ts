@@ -3,7 +3,9 @@ import * as R from "remeda";
 
 const envSchema = z.object({
   BUILD_MODE: z.enum(["dev", "prod"]),
-  OAUTH2_PROXY_PATH: z.string(),
+  OAUTH2_SERVER_BASE_URL: z.url(),
+  OAUTH2_CLIENT_ID: z.string().min(1),
+  OAUTH2_CLIENT_SECRET: z.string().min(1),
   PORT: z.string()
     .transform((val) => Number(val))
     .refine((val) => Number.isInteger(val) && val > 0 && val < 65536, {
