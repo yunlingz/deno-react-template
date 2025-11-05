@@ -193,7 +193,76 @@ app.post("/oauth/authorize", async (c) => {
     username !== flags["stored-username"] ||
     password !== flags["stored-password"]
   ) {
-    return c.text("Invalid credentials or client", 400);
+    return c.html(
+      `
+<html>
+  <head>
+    <title>Login Failed</title>
+    <style>
+      html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #181818;
+        font-family: system-ui, sans-serif;
+        color: #f3f4f6;
+      }
+      .error-container {
+        background: #2b2b2b;
+        padding: 2.5rem 2rem;
+        border-radius: 10px;
+        box-shadow: 0 2px 16px rgba(0, 0, 0, 0.25);
+        min-width: 320px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      .error-container h1 {
+        color: #f65c5c;
+        margin-bottom: 1rem;
+      }
+      .error-container p {
+        margin-bottom: 1.5rem;
+        color: #f3f4f6;
+      }
+      .error-container a {
+        display: inline-block;
+        padding: 0.75rem 1.5rem;
+        background: #6366f1;
+        color: #fff;
+        border-radius: 6px;
+        text-decoration: none;
+        font-size: 1rem;
+        transition: background 0.2s;
+      }
+      .error-container a:hover {
+        background: #4f46e5;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="error-container">
+      <h1>Login Failed</h1>
+      <p>Invalid credentials or client information.</p>
+      <a
+        href="/oauth/authorize?response_type=code&client_id=${
+        encodeURIComponent(client_id)
+      }&redirect_uri=${encodeURIComponent(redirect_uri)}&state=${
+        encodeURIComponent(state)
+      }"
+      >Try Again</a>
+    </div>
+  </body>
+</html>
+      `,
+      400,
+    );
   }
 
   const code = crypto.randomUUID();
