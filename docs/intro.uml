@@ -1,0 +1,17 @@
+@startuml
+actor User
+participant "Your Site (Client)" as Client
+participant "Microsoft (Auth Server)" as AuthServer
+participant "Microsoft (Resource Server)" as Resource
+
+User -> Client: Visit site, click 'Login with Microsoft'
+Client -> AuthServer: Redirect to /authorize
+User -> AuthServer: Enter credentials
+AuthServer -> User: Authenticate user
+AuthServer -> Client: Redirect back with code
+Client -> AuthServer: Exchange code for tokens (/token)
+AuthServer -> Client: Return access token, id token
+Client -> Resource: Request user info (with access token)
+Resource -> Client: Return user data (e.g., avatar)
+Client -> User: Show authenticated UI
+@enduml
