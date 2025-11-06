@@ -12,5 +12,7 @@ Quick link:
 * oauth2 client impl: [/api/main.ts](https://github.com/yunlingz/deno-react-template/blob/oauth-example/api/main.ts)
 * oauth2 client UI impl: [/src/App.tsx](https://github.com/yunlingz/deno-react-template/blob/oauth-example/src/App.tsx)
 
+Quick Intro link: [intro.md](docs/intro.md)
+
 OAuth2 & OpenID protocol explained:
 ![OAuth2 Flow](docs/flow.svg)
